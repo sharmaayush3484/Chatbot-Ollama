@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>AI Chatbot</title>
+
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #141e30, #243b55);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            transition: 0.3s;
+        }
+
+        .light {
+            background: #f1f5f9;
+        }
+
+        .chat-container {
+            width: 900px;
+            max-width: 95%;
+            height: 550px;
+            background: #1f2937;
+            border-radius: 15px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.6);
+        }
+
+        .header {
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            border-bottom: 1px solid #333;
+        }
+
+        .chat-box {
+            flex: 1;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .message {
+            max-width: 65%;
+            padding: 10px;
+            margin: 8px 0;
+            border-radius: 10px;
+        }
+
+        .user {
+            background: #3b82f6;
+            color: white;
+            margin-left: auto;
+        }
+
+        .bot {
+            background: #374151;
+            color: #e5e7eb;
+        }
+
+        .input-area {
+            display: flex;
+            padding: 10px;
+            gap: 10px;
+            border-top: 1px solid #333;
+        }
+
+        input {
+            flex: 1;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            outline: none;
+        }
+
+        button {
+            padding: 10px 15px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .send-btn {
+            background: #10b981;
+            color: white;
+        }
+
+        .clear-btn {
+            background: #ef4444;
+            color: white;
+        }
+
+        .theme-btn {
+            background: #6366f1;
+            color: white;
+        }
+
+        .typing {
+            font-style: italic;
+            color: #9ca3af;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="chat-container">
+
+        <div class="header">
+            <span>🤖 AI Chatbot</span>
+            <div>
+                <button class="theme-btn" onclick="toggleTheme()">🌙</button>
+                <button class="clear-btn" onclick="clearChat()">Clear</button>
+            </div>
+        </div>
+
+        <div class="chat-box" id="chatBox"></div>
+
+        <div class="input-area">
+            <input id="input" placeholder="Type your message..." />
+            <button class="send-btn" onclick="sendMessage()">Send</button>
+        </div>
+
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        // 🔑 Firebase Config (PUT YOURS HERE)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAVy4qbx0yOVKiuClDH-dDBS4mfnRKquAE",
+            authDomain: "ai-chatbot-15390.firebaseapp.com",
+            databaseURL: "https://ai-chatbot-15390-default-rtdb.firebaseio.com",
+            projectId: "ai-chatbot-15390",
+            storageBucket: "ai-chatbot-15390.firebasestorage.app",
+            messagingSenderId: "559636122943",
+            appId: "1:559636122943:web:7bdcf20f818168698d578a",
+            measurementId: "G-BQQHFQJQ19"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        
+        // Enter key
+        input.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") sendMessage();
+        });
+
+        // Send message
+        window.sendMessage = async function () {
+            const message = input.value.trim();
+            if (!message) return;
+
+            addMessage(message, "user");
+            input.value = "";
+
+            const typing = addTyping();
+
+            try {
+                const res = await fetch("http://localhost:3000/chat", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ message })
+                });
+
+                const data = await res.json();
+
+                typing.remove();
+                addMessage(data.reply, "bot");
+
+                // Save chat
+                await addDoc(collection(db, "chats"), {
+                    userMessage: message,
+                    botReply: data.reply,
+                    timestamp: new Date()
+                });
+
+            } catch {
+                typing.remove();
+                addMessage("⚠️ Server error", "bot");
+            }
+        };
+
+        // Add message
+        function addMessage(text, type) {
+            const div = document.createElement("div");
+            div.className = `message ${type}`;
+            div.innerText = text;
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+
+        // Typing
+        function addTyping() {
+            const div = document.createElement("div");
+            div.className = "typing";
+            div.innerText = "AI is typing...";
+            chatBox.appendChild(div);
+            chatBox.scrollTop = chatBox.scrollHeight;
+            return div;
+        }
+
+        // Clear chat
+        window.clearChat = function () {
+            chatBox.innerHTML = "";
+        };
+
+        // Load history
+        async function loadHistory() {
+            const q = query(collection(db, "chats"), orderBy("timestamp"));
+            const snapshot = await getDocs(q);
+
+            snapshot.forEach(doc => {
+                const chat = doc.data();
+                addMessage(chat.userMessage, "user");
+                addMessage(chat.botReply, "bot");
+            });
+        }
+
+        loadHistory();
+
+        // Theme toggle
+        window.toggleTheme = function () {
+            document.body.classList.toggle("light");
+        };
+    </script>
+
+</body>
+
+</html>
