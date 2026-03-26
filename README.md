@@ -180,6 +180,7 @@ git push -u origin main
 ```
 
 ![image-alt](https://github.com/sharmaayush3484/Chatbot-Ollama/blob/c30bf56eba3a03a601c1eea07861182d9adb3167/Chatgpt.PNG) 
+![image-alt](https://github.com/sharmaayush3484/Chatbot-Ollama/blob/3be42058eb374083dd1de07f5d750d8d18fecb66/model-2.PNG)
 
 ### Local Deployment (Same Machine)
 
