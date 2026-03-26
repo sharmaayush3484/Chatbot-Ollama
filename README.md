@@ -179,6 +179,8 @@ git commit -m "Initial commit: AI Chatbot with Ollama"
 git push -u origin main
 ```
 
+![image-alt](https://github.com/sharmaayush3484/Chatbot-Ollama/blob/c30bf56eba3a03a601c1eea07861182d9adb3167/Chatgpt.PNG) 
+
 ### Local Deployment (Same Machine)
 
 ✅ Already configured - just run `npm start`
